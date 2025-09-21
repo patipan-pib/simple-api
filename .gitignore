@@ -1,4 +1,2 @@
-
-log.html
-output.xml
-report.html
+env
+*.pyc
