@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Build & Test on VM2') {
             steps {
-                sshagent (credentials: ['vm2_ssh']) {
+                sshagent (credentials: ['ssh-vm2']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no $VM2 '
                         set -e
@@ -42,7 +42,7 @@ pipeline {
 
         stage('Deploy & Load Test on VM3') {
             steps {
-                sshagent (credentials: ['vm3_ssh']) {
+                sshagent (credentials: ['ssh-vm3']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no $VM3 '
                         set -e
