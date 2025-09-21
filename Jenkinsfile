@@ -51,7 +51,7 @@ pipeline {
 
             echo '>>> (Optional) Sanity run'
             (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
-            docker run -d --name simple-api -p 8081:8080 ${REGISTRY}:${env.BUILD_NUMBER} || true
+            docker run -d --name simple-api -p 8081:5000 ${REGISTRY}:${env.BUILD_NUMBER} || true
 
             echo '>>> Robot test (skip if repo/tests not found)'
             cd .. && git clone ${REPO_ROBOT} simple-api-robot || true
@@ -87,7 +87,7 @@ pipeline {
 
             echo '>>> Restart container'
             (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
-            docker run -d --name simple-api -p 80:8080 ${REGISTRY}:${env.BUILD_NUMBER}
+            docker run -d --name simple-api -p 80:5000 ${REGISTRY}:${env.BUILD_NUMBER}
 
             echo '>>> JMeter load test (skip if jmeter/plan not present)'
             if [ -x ~/jmeter/bin/jmeter ] && [ -f ~/plans/loadtest.jmx ]; then
