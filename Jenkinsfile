@@ -45,9 +45,9 @@ pipeline {
 
             echo '>>> Unit test (skip if script not found)'
             if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh; else echo 'skip unit test'; fi
-
+            
             echo '>>> Build Docker image'
-            docker build -t ${REGISTRY}:${env.BUILD_NUMBER} .
+            docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
             echo '>>> (Optional) Sanity run'
             (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
