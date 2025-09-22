@@ -49,7 +49,7 @@ pipeline {
             echo '>>> Clone API repo'
             git clone ${REPO_API} simple-api
             cd simple-api
-            echo "$PWD"
+            echo ">>> Current dir on VM2: \$(pwd)"
 
             echo '>>> Unit test (skip if script not found)'
             python3 -m pip install --user -U pip
