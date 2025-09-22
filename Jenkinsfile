@@ -49,7 +49,6 @@ pipeline {
             echo '>>> Clone API repo'
             git clone ${REPO_API} simple-api
             cd simple-api
-            GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
             echo '>>> Unit test (skip if script not found)'
             python3 -m pip install --user -U pip
@@ -58,7 +57,8 @@ pipeline {
             python3 -m unittest -v unit_test.py
 
             echo '>>> Build Docker image'
-            echo "DEBUG: GIT_SHA=\$GIT_SHA" 
+            GIT_SHA=\$(git rev-parse --short HEAD)
+            echo "DEBUG: GIT_SHA=\$GIT_SHA"
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
             echo '>>> (Optional) Sanity run'
