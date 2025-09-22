@@ -45,11 +45,11 @@ pipeline {
           sh """
           ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
             rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
+            echo ">>> Current dir on VM2: $(pwd)"
 
             echo '>>> Clone API repo'
             git clone ${REPO_API} simple-api
             cd simple-api
-            echo ">>> Current dir on VM2: $(pwd)"
 
             echo '>>> Unit test (skip if script not found)'
             python3 -m pip install --user -U pip
