@@ -3,6 +3,8 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
+GETCODE = "TEST SUCCESS"
+
 @app.route('/')
 def index():
     return "Index!"
@@ -10,6 +12,12 @@ def index():
 @app.route('/hello/<name>', methods=['GET'])
 def hello(name):
     return "Hello, " + str(name)
+
+@app.route('/getcode', methods=['GET'])
+def getcode():
+    return GETCODE
+
+@app.route('')
 
 
 @app.route('/calculate/<num1>/<num2>', methods=['GET'])
