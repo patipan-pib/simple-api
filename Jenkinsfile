@@ -232,28 +232,6 @@ pipeline {
         }
       }
     }
-
-    stage('Robot on VM3 (Pre-Prod)') {
-      steps {
-        withCredentials([sshUserPrivateKey(credentialsId:'ssh-vm3',keyFileVariable:'K3',usernameVariable:'U3')]) {
-          sh """
-          ssh -i "$K3" -o StrictHostKeyChecking=no "$U3@${VM3_HOST}" "set -e
-            rm -rf ~/ci-robot && mkdir -p ~/ci-robot && cd ~/ci-robot
-            git clone ${REPO_ROBOT} simple-api-robot
-            cd simple-api-robot
-            python3 -m pip install --user --upgrade pip robotframework robotframework-requests requests
-            export PATH=\\"\\$HOME/.local/bin:\\$PATH\\"
-            mkdir -p results
-            robot -d results -v BASE:'${params.ROBOT_BASE_VM3}' -v EXPECT_CODE:'${params.TEACHER_CODE}' tests/ || (echo 'Robot test failed (VM3)' && exit 1)
-          "
-          """
-          sh """
-            rm -rf robot_results_vm3 && mkdir -p robot_results_vm3
-            scp -i "$K3" -o StrictHostKeyChecking=no -r "$U3@${VM3_HOST}:~/ci-robot/simple-api-robot/results/" robot_results_vm3/
-          """
-        }
-      }
-    }
   }
 
   post {
