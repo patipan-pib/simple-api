@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   parameters {
-    string(name: 'TEACHER_CODE', defaultValue: 'TEST SUCCESS', description: 'Expected /getcode & container ENV')
+    string(name: 'TEACHER_CODE', defaultValue: 'SUCCESS', description: 'Expected /getcode & container ENV')
     string(name: 'ROBOT_BASE_VM2', defaultValue: 'http://vm2.local:8081', description: 'Robot BASE for VM2 sanity')
     string(name: 'ROBOT_BASE_VM3', defaultValue: 'http://vm3.local', description: 'Robot BASE for VM3 pre-prod')
   }
