@@ -278,7 +278,7 @@ pipeline {
             #!/usr/bin/env bash
             
             ssh -i $KEY" -o StrictHostKeyChecking=no "$USER@$VM2_HOST" '
-              set -euo pipefail
+              set -e
 
               rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
 
