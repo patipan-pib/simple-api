@@ -90,18 +90,18 @@ pipeline {
               rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
 
               # --- API repo ---
-              git clone --depth 1 "$REPO_API" simple-api
+              git clone --depth 1 "${REPO_API}" simple-api
               cd simple-api
 
               # Unit test (optional)
               if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh; else echo "skip unit test"; fi
 
               # Build image (ปรับ path Dockerfile ให้ตรงโปรเจ็กต์ของคุณ)
-              docker build -f app/Dockerfile -t "$REGISTRY:$BUILD_NUMBER" .
+              docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
               # Sanity run
               (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
-              docker run -d --name simple-api -e TEACHER_CODE="$TEACHER_CODE" -p 8081:5000 "$REGISTRY:$BUILD_NUMBER" || true
+              docker run -d --name simple-api -p 8081:5000 ${REGISTRY}:${env.BUILD_NUMBER} || true
 
               # --- Robot repo ---
               cd .. && git clone --depth 1 "$REPO_ROBOT" simple-api-robot
