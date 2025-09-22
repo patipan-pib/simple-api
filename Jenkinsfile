@@ -98,6 +98,12 @@ pipeline {
 
     stage('Push to GHCR (+ show latest timestamp)') {
       steps {
+        script {
+          env.GIT_SHA = sh(
+            returnStdout: true,
+            script: "git ls-remote --heads ${REPO_API} refs/heads/main | cut -c1-7 || echo unknown"
+          ).trim()
+        }
         withCredentials([string(credentialsId: 'ghcr_pat', variable: 'GHCR_PAT')]) {
           sh """
           set -e
