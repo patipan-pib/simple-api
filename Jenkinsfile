@@ -1,6 +1,12 @@
 pipeline {
   agent any
 
+  parameters {
+  string(name: 'ROBOT_BASE', defaultValue: 'http://vm2.local:8081', description: 'Robot test BASE URL')
+  string(name: 'ROBOT_EXPECT', defaultValue: 'ABC123', description: 'Expected teacher code for /getcode')
+  }
+
+
   environment {
     // Hosts
     VM2_HOST = "vm2.local"   // Test/Build
