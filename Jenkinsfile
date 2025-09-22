@@ -123,9 +123,9 @@ pipeline {
               rm -rf robot_results_vm2 && mkdir -p robot_results_vm2
               scp -o StrictHostKeyChecking=no -r "$U2@$VM2_HOST:~/ci/simple-api-robot/results/" robot_results_vm2/
             '''
+        }
+      }
     }
-  }
-}
 
 
     stage('Deploy & Sanity/Load on VM3') {
