@@ -78,6 +78,13 @@ pipeline {
               echo 'skip robot (repo not found)'
             fi
 
+            echo '>>> Unit test'
+            cd ci/simple-api
+            if [ -x ./run_unit_test.sh ]; then
+              ./run_unit_test.sh
+            else
+              echo 'skip unit test (script not found)'
+            fi
 
             echo '>>> Push image to registry'
             docker push ${REGISTRY}:${env.BUILD_NUMBER}
@@ -87,19 +94,6 @@ pipeline {
           "
           """
         }
-      }
-    }
-
-    stage('Unit Test (python) on Jenkins') {
-      steps {
-        sh """
-          cd ci/simple-api
-          if [ -x ./run_unit_test.sh ]; then
-            ./run_unit_test.sh
-          else
-            echo 'skip unit test (script not found)'
-          fi
-        """
       }
     }
 
