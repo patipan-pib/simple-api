@@ -49,7 +49,6 @@ pipeline {
             echo '>>> Clone API repo'
             git clone ${REPO_API} simple-api
             cd simple-api
-            echo "pwd -> $PWD"
 
             echo '>>> Unit test (skip if script not found)'
             python3 -m pip install --user -U pip
