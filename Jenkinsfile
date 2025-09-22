@@ -175,18 +175,28 @@ pipeline {
             (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
             docker run -d --name simple-api -p 8081:5000 ${REGISTRY}:${env.BUILD_NUMBER} || true
 
-            echo '>>> Robot test (skip if repo/tests not found)'
-            cd .. && git clone ${REPO_ROBOT} simple-api-robot || true
+            echo '>>> Robot test'
+            cd .. && git clone --depth 1 "$REPO_ROBOT" simple-api-robot || true
             if [ -d simple-api-robot ]; then
               cd simple-api-robot
-              if command -v robot >/dev/null 2>&1; then
-                robot -d results tests/ || (echo 'Robot test failed' && exit 1)
+              # ติดตั้งให้ชัวร์ แล้วเรียกผ่านโมดูล
+              python3 -m pip install --user -U pip robotframework robotframework-requests requests
+              mkdir -p results
+
+              # เลือกตำแหน่งเทสอัตโนมัติ
+              if [ -d tests ] && ls -1 tests/*.robot >/dev/null 2>&1; then
+                python3 -m robot -d results -v BASE:"http://vm2.local:8081" -v EXPECT_CODE:"$TEACHER_CODE" tests/ \
+                  || (echo 'Robot test failed' && exit 1)
+              elif ls -1 ./*.robot >/dev/null 2>&1; then
+                python3 -m robot -d results -v BASE:"http://vm2.local:8081" -v EXPECT_CODE:"$TEACHER_CODE" ./*.robot \
+                  || (echo 'Robot test failed' && exit 1)
               else
-                echo 'skip robot (robot not installed)'
+                echo 'ERROR: No .robot files found' && exit 250
               fi
             else
               echo 'skip robot (repo not found)'
             fi
+
 
             echo '>>> Push image to registry'
             docker push ${REGISTRY}:${env.BUILD_NUMBER}
@@ -198,7 +208,7 @@ pipeline {
         }
       }
     }
-    
+
     stage('Deploy & Sanity/Load on VM3') {
       steps {
         withCredentials([sshUserPrivateKey(credentialsId:'ssh-vm3',keyFileVariable:'K3',usernameVariable:'U3')]) {
