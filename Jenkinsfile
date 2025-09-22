@@ -1,5 +1,6 @@
 pipeline {
   agent any
+  options { shell('/bin/bash') }
 
   parameters {
     string(name: 'TEACHER_CODE', defaultValue: 'TEST SUCCESS', description: 'Expected /getcode & container ENV')
@@ -274,8 +275,8 @@ pipeline {
         withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2',
                                           keyFileVariable: 'KEY',
                                           usernameVariable: 'USER')]) {
-          sh """
-            #!/usr/bin/env bash
+          sh '''
+            #!/usr/bin/env bash -lc "
             
             ssh -i $KEY" -o StrictHostKeyChecking=no "$USER@$VM2_HOST" '
               set -e
@@ -325,7 +326,8 @@ pipeline {
               echo ">>> Cleanup temp container"
               docker rm -f simple-api || true
             '
-          """
+            "
+          '''
         }
       }
     }
