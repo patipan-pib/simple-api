@@ -57,8 +57,6 @@ pipeline {
             python3 -m unittest -v unit_test.py
 
             echo '>>> Build Docker image'
-            GIT_SHA=\$(git rev-parse --short HEAD)
-            echo "DEBUG: GIT_SHA=${GIT_SHA}"
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
             echo '>>> (Optional) Sanity run'
@@ -94,15 +92,8 @@ pipeline {
 
             echo '>>> Login to GitHub Container Registry (GHCR)'
             echo '$GHCR_PAT' | docker login ghcr.io -u patipan-pib --password-stdin
-
-            echo '>>> Tag & Push image to GHCR'
-            # docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:latest
-            docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:${env.BUILD_NUMBER}
-            docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:${GIT_SHA}
-
-            # docker push ghcr.io/patipan-pib/simple-api:latest
-            docker push ghcr.io/patipan-pib/simple-api:${env.BUILD_NUMBER}
-            docker push ghcr.io/patipan-pib/simple-api:${GIT_SHA}
+            docker tag vm2.local:5000/simple-api:${BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:${BUILD_NUMBER}
+            docker push ghcr.io/patipan-pib/simple-api:${BUILD_NUMBER}
 
             echo '>>> Cleanup temp container'
             docker rm -f simple-api || true
