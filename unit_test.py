@@ -6,7 +6,7 @@ class AppTestCase(unittest.TestCase):
 
     def test_getcode(self):
         res = app.getcode()
-        self.assertEqual(res.get_json(), {"code": "SUCCESS"})
+        self.assertEqual(res.get_json(), {"code": "success"})
 
     def test_plus_ok(self):
         res = app.plus(5, 7)
