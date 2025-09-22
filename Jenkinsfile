@@ -105,13 +105,13 @@ pipeline {
           echo "$GHCR_PAT" | docker login ${GHCR_REGISTRY} -u patipan-pib --password-stdin
 
           echo '>>> Pull image from local registry (ensure we have it locally on Jenkins)'
-          docker pull ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} || true
+          docker pull ${REGISTRY}:${env.BUILD_NUMBER} || true
 
           echo '>>> Tag to GHCR (latest, build number, and git sha)'
           GIT_SHA=\$(git ls-remote --heads ${REPO_API} refs/heads/main | cut -c1-7 || echo unknown)
-          docker tag ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:latest
-          docker tag ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:${env.BUILD_NUMBER}
-          docker tag ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:$GIT_SHA
+          docker tag ${REGISTRY}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:latest
+          docker tag ${REGISTRY}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:${env.BUILD_NUMBER}
+          docker tag ${REGISTRY}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:$GIT_SHA
 
           echo '>>> Push to GHCR'
           docker push ${GHCR_IMAGE}:latest
