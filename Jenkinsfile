@@ -79,7 +79,7 @@ pipeline {
                                             keyFileVariable: 'K2',
                                             usernameVariable: 'U2')]) {
             // ไม่มี GString; ทั้งบล็อกเป็น plain string -> ไม่ทริกเกอร์เตือน secret
-            sh '''#!/usr/bin/env bash
+            sh """#!/usr/bin/env bash
               set -euo pipefail
 
               # รันคำสั่งรีโมตด้วย bash + heredoc แบบ quoted
@@ -122,7 +122,7 @@ pipeline {
               # ดึงรายงานกลับ Jenkins
               rm -rf robot_results_vm2 && mkdir -p robot_results_vm2
               scp -o StrictHostKeyChecking=no -r "$U2@$VM2_HOST:~/ci/simple-api-robot/results/" robot_results_vm2/
-            '''
+            """
         }
       }
     }
