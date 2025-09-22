@@ -97,10 +97,6 @@ pipeline {
     }
 
     stage('Push to GHCR (+ show latest timestamp)') {
-      environment {
-        // ใส่ PAT ใน Jenkins Credentials (Secret text) id = ghcr_pat
-        // ต้องมีสิทธิ์ read:packages, write:packages (และ delete:packages ถ้าต้องลบ)
-      }
       steps {
         withCredentials([string(credentialsId: 'ghcr_pat', variable: 'GHCR_PAT')]) {
           sh """
