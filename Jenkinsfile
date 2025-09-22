@@ -13,6 +13,9 @@ pipeline {
     REPO_API   = "https://github.com/patipan-pib/simple-api.git"
     REPO_ROBOT = "https://github.com/patipan-pib/simple-api-robot.git"
     REGISTRY   = "vm2.local:5000/simple-api"
+
+    GHCR_REGISTRY  = "ghcr.io"
+    GHCR_IMAGE     = "ghcr.io/patipan-pib/simple-api"   // ชื่อ container บน GHCR
   }
 
   stages {
@@ -51,6 +54,7 @@ pipeline {
             python3 -m unittest -v unit_test.py
 
             echo '>>> Build Docker image'
+            GIT_SHA=\$(git rev-parse --short HEAD)
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
             echo '>>> (Optional) Sanity run'
@@ -87,6 +91,39 @@ pipeline {
             echo '>>> Cleanup temp container'
             docker rm -f simple-api || true
           "
+          """
+        }
+      }
+    }
+
+    stage('Push to GHCR (+ show latest timestamp)') {
+      environment {
+        // ใส่ PAT ใน Jenkins Credentials (Secret text) id = ghcr_pat
+        // ต้องมีสิทธิ์ read:packages, write:packages (และ delete:packages ถ้าต้องลบ)
+      }
+      steps {
+        withCredentials([string(credentialsId: 'ghcr_pat', variable: 'GHCR_PAT')]) {
+          sh """
+          set -e
+          echo '>>> Login to GHCR'
+          echo "$GHCR_PAT" | docker login ${GHCR_REGISTRY} -u patipan-pib --password-stdin
+
+          echo '>>> Pull image from local registry (ensure we have it locally on Jenkins)'
+          docker pull ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} || true
+
+          echo '>>> Tag to GHCR (latest, build number, and git sha)'
+          GIT_SHA=\$(git ls-remote --heads ${REPO_API} refs/heads/main | cut -c1-7 || echo unknown)
+          docker tag ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:latest
+          docker tag ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:${env.BUILD_NUMBER}
+          docker tag ${REGISTRY_LOCAL}:${env.BUILD_NUMBER} ${GHCR_IMAGE}:$GIT_SHA
+
+          echo '>>> Push to GHCR'
+          docker push ${GHCR_IMAGE}:latest
+          docker push ${GHCR_IMAGE}:${env.BUILD_NUMBER}
+          docker push ${GHCR_IMAGE}:$GIT_SHA
+
+          echo '>>> Show GHCR latest tag timestamp (via GitHub API)'
+          curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GHCR_PAT" https://api.github.com/users/patipan-pib/packages/container/simple-api/versions?per_page=1 | jq -r '.[0] | "latest_tags=\(.metadata.container.tags)\\nupdated_at=\(.updated_at)"' || true
           """
         }
       }
