@@ -75,58 +75,57 @@ pipeline {
 
     stage('Build & Unit/Robot on VM2') {
         steps {
-          // ใช้ ssh-agent ก็ได้ถ้ามี plugin: sshagent(['ssh-vm2']) { ... }
-          withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]) {
-            sh """
-              #!/bin/bash -e
-              ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
+          withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2',
+                                            keyFileVariable: 'K2',
+                                            usernameVariable: 'U2')]) {
+            // ไม่มี GString; ทั้งบล็อกเป็น plain string -> ไม่ทริกเกอร์เตือน secret
+            sh '''#!/usr/bin/env bash
+              set -euo pipefail
+
+              # รันคำสั่งรีโมตด้วย bash + heredoc แบบ quoted
+              ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
+              set -euo pipefail
+
+              # --- Workspace ---
               rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
 
-              # ---- API repo ----
-              git clone --depth 1 ${REPO_API} simple-api
+              # --- API repo ---
+              git clone --depth 1 "$REPO_API" simple-api
               cd simple-api
 
               # Unit test (optional)
               if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh; else echo "skip unit test"; fi
 
-              # Build & sanity run
-              docker build -f app/Dockerfile -t ${REGISTRY}:${BUILD_NUMBER} .
-              (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
-              docker run -d --name simple-api -e TEACHER_CODE="${TEACHER_CODE}" -p 8081:5000 ${REGISTRY}:${BUILD_NUMBER} || true
+              # Build image (ปรับ path Dockerfile ให้ตรงโปรเจ็กต์ของคุณ)
+              docker build -f app/Dockerfile -t "$REGISTRY:$BUILD_NUMBER" .
 
-              # ---- Robot repo ----
-              cd .. && git clone --depth 1 ${REPO_ROBOT} simple-api-robot
+              # Sanity run
+              (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
+              docker run -d --name simple-api -e TEACHER_CODE="$TEACHER_CODE" -p 8081:5000 "$REGISTRY:$BUILD_NUMBER" || true
+
+              # --- Robot repo ---
+              cd .. && git clone --depth 1 "$REPO_ROBOT" simple-api-robot
               cd simple-api-robot
 
-              # Install Robot + RequestsLibrary (แบบ --user ใต้ผู้ใช้ Test)
-              python3 -m pip install --user --upgrade pip
-              if [ -f requirements.txt ]; then
-                python3 -m pip install --user -r requirements.txt
-              fi
-              # เผื่อไฟล์ requirements ยังไม่มี RequestsLibrary ให้ลงให้ชัวร์
-              python3 -m pip install --user robotframework robotframework-requests requests
-
-              # ตรวจตำแหน่งติดตั้ง (debug)
-              python3 -c "import site,sys; print(site.getusersitepackages()); print(sys.executable)"
+              # Install Robot + RequestsLibrary สำหรับ RequestsLibrary
+              python3 -m pip install --user -U pip robotframework robotframework-requests requests
               python3 -m robot --version
 
-              # Run Robot โดยเรียกผ่านโมดูล (ไม่พึ่ง PATH)
+              # Run Robot (เรียกผ่านโมดูล ไม่พึ่ง PATH)
               mkdir -p results
-              python3 -m robot -d results -v BASE:"http://vm2.local:8081" -v EXPECT_CODE:"${TEACHER_CODE}" tests/ || (echo "Robot test failed (VM2)" && exit 1)
+              python3 -m robot -d results -v BASE:"http://vm2.local:8081" -v EXPECT_CODE:"$TEACHER_CODE" tests/ || (echo "Robot test failed (VM2)" && exit 1)
 
-              # Push image
-              docker push ${REGISTRY}:${BUILD_NUMBER}
-            "
-            """
+              # Push image หลังเทสต์ผ่าน
+              docker push "$REGISTRY:$BUILD_NUMBER"
+              REMOTE
 
-            // ดึงผลกลับ Jenkins (มีจริงเพราะเพิ่งรันข้างบน)
-            sh """#!/bin/bash -e
+              # ดึงรายงานกลับ Jenkins
               rm -rf robot_results_vm2 && mkdir -p robot_results_vm2
-              scp -i "$K2" -o StrictHostKeyChecking=no -r "$U2@${VM2_HOST}:~/ci/simple-api-robot/results/" robot_results_vm2/
-            """
-          }
-        }
-      }
+              scp -o StrictHostKeyChecking=no -r "$U2@$VM2_HOST:~/ci/simple-api-robot/results/" robot_results_vm2/
+            '''
+    }
+  }
+}
 
 
     stage('Deploy & Sanity/Load on VM3') {
