@@ -45,7 +45,8 @@ pipeline {
             cd simple-api
 
             echo '>>> Unit test (skip if script not found)'
-            if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh; else echo 'skip unit test'; fi
+            coverage run -m unittest unit_test.py -v
+            coverage report -m
             
             echo '>>> Build Docker image'
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
@@ -77,15 +78,7 @@ pipeline {
             else
               echo 'skip robot (repo not found)'
             fi
-
-            echo '>>> Unit test'
-            cd ci/simple-api
-            if [ -x ./run_unit_test.sh ]; then
-              ./run_unit_test.sh
-            else
-              echo 'skip unit test (script not found)'
-            fi
-
+          
             echo '>>> Push image to registry'
             docker push ${REGISTRY}:${env.BUILD_NUMBER}
 
