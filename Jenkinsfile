@@ -3,15 +3,15 @@ pipeline {
 
   environment {
     // Hosts
-    VM2_HOST = "10.162.209.192"   // Test/Build
-    VM3_HOST = "10.162.209.18"    // Pre-Prod/Deploy
+    VM2_HOST = "vm2.local"   // Test/Build
+    VM3_HOST = "vm3.local"    // Pre-Prod/Deploy
 
     // Repos (HTTPS เพื่อไม่ต้องมี SSH key บน VM2)
     REPO_API   = "https://github.com/patipan-pib/simple-api.git"
     REPO_ROBOT = "https://github.com/patipan-pib/simple-api-robot.git"
 
     // Private Registry (running on VM2:5000; ensure VM3 allows insecure registry)
-    REGISTRY   = "10.162.209.192:5000/simple-api"
+    REGISTRY   = "vm2.local:5000/simple-api"
   }
 
   stages {
