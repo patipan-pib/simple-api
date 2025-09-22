@@ -175,7 +175,7 @@ pipeline {
             echo '>>> (Optional) Sanity run'
             // (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
             // docker run -d --name simple-api -p 8081:5000 ${REGISTRY}:${env.BUILD_NUMBER} || true
-            (docker ps -aq --filter name=simple-api  && docker rm -f simple-api) || true
+            (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
             docker run -d --name simple-api -e TEACHER_CODE="${TEACHER_CODE}" -p 8081:5000 "${REGISTRY}:${env.BUILD_NUMBER}" || true
 
             echo '>>> Robot test'
