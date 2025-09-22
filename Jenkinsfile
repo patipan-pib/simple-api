@@ -39,44 +39,43 @@ pipeline {
       }
     }
 
-    stage('Build & Test on VM2') {
+    
+    stage('Build & Test on VM2 (Robot)') {
       steps {
         withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]) {
-        sh """
-        ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
-          # เตรียมโฟลเดอร์งาน
-          mkdir -p ~/ci && cd ~/ci
-          rm -rf simple-api-robot
-          git clone ${REPO_ROBOT} simple-api-robot
-          cd simple-api-robot
+          // ใช้ """ (double-quoted GString) ได้ แต่อ้างอิงตัวแปร Jenkins ให้ใช้ ${params.X}
+          // และเวลาอยากส่ง $ ให้ฝั่ง shell ให้ escape เป็น \$ เสมอ
+          sh """
+          ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
+            mkdir -p ~/ci && cd ~/ci
+            rm -rf simple-api-robot
+            git clone ${REPO_ROBOT} simple-api-robot
+            cd simple-api-robot
 
-          # ติดตั้ง Robot Framework (โหมด --user) และจัด PATH ให้เห็นไบนารี
-          python3 -m pip install --user --upgrade pip
-          if [ -f requirements.txt ]; then
-            python3 -m pip install --user -r requirements.txt
-          else
-            # อย่างน้อยต้องมี 2 ตัวนี้เพื่อใช้ RequestsLibrary
-            python3 -m pip install --user robotframework robotframework-requests requests
-          fi
-          export PATH=\\"\\$HOME/.local/bin:\\$PATH\\"
+            python3 -m pip install --user --upgrade pip
+            if [ -f requirements.txt ]; then
+              python3 -m pip install --user -r requirements.txt
+            else
+              python3 -m pip install --user robotframework robotframework-requests requests
+            fi
+            export PATH=\\\"\\$HOME/.local/bin:\\$PATH\\\"
 
-          # ค่าพื้นฐานสำหรับทดสอบ (ปรับได้จาก Jenkins environment ถ้ามี)
-          : \${ROBOT_BASE:=http://vm2.local:8081}
-          : \${ROBOT_EXPECT:=ABC123}
+            # 2) ส่งค่าจาก Jenkins parameters ไปเป็น ENV ใน shell ฝั่ง VM2
+            export ROBOT_BASE='${params.ROBOT_BASE}'
+            export ROBOT_EXPECT='${params.ROBOT_EXPECT}'
 
-          # รัน Robot + เก็บผล
-          mkdir -p results
-          # ถ้าคุณใช้ไฟล์เดียวรวม (เช่น api_tests.robot) ก็ชี้เป็นไฟล์นั้น
-          robot -d results -v BASE:\\$ROBOT_BASE -v EXPECT_CODE:\\$ROBOT_EXPECT tests/ || (echo 'Robot test failed' && exit 1)
-        "
+            mkdir -p results
+            robot -d results -v BASE:\\$ROBOT_BASE -v EXPECT_CODE:\\$ROBOT_EXPECT tests/ || (echo 'Robot test failed' && exit 1)
+          "
 
-        # ดึงผลกลับมาโชว์บน Jenkins (optional แต่แนะนำ)
-        rm -rf robot_results && mkdir -p robot_results
-        scp -i "$K2" -o StrictHostKeyChecking=no -r "$U2@${VM2_HOST}:~/ci/simple-api-robot/results/" robot_results/
-        """
-      }
+          # ดึงผลกลับ Jenkins (optional แต่แนะนำ)
+          rm -rf robot_results && mkdir -p robot_results
+          scp -i "$K2" -o StrictHostKeyChecking=no -r "$U2@${VM2_HOST}:~/ci/simple-api-robot/results/" robot_results/
+          """
+        }
       }
     }
+  
 
     stage('Deploy & Load Test on VM3') {
       steps {
