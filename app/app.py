@@ -17,7 +17,16 @@ def hello(name):
 def getcode():
     return GETCODE
 
-@app.route('')
+@app.route('/plus/<num1>/<num2>', methods=['GET'])
+def plus(num1, num2):
+    try:
+        num1 = eval(num1)
+        num2 = int(num2)
+        result = { 'result' : num1 + num2 }
+    except:
+        result = { 'error_msg' : 'inputs must be numbers' }
+
+    return jsonify(result)
 
 
 @app.route('/calculate/<num1>/<num2>', methods=['GET'])
