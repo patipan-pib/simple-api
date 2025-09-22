@@ -38,7 +38,10 @@ pipeline {
 
     stage('Build & Test on VM2') {
       steps {
-        withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]), string(credentialsId: 'ghcr_pat', variable: 'GHCR_PAT') {
+        withCredentials([
+          sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2'),
+          string(credentialsId: 'ghcr_pat', variable: 'GHCR_PAT')
+        ]) {
           sh """
           ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
             rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
