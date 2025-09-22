@@ -58,8 +58,7 @@ pipeline {
 
             echo '>>> Build Docker image'
             GIT_SHA=\$(git rev-parse --short HEAD)
-            echo "DEBUG: GIT_SHA=$GIT_SHA"
-            echo "DEBUG: GIT_SHA=\$GIT_SHA"
+            echo "DEBUG: GIT_SHA=\$GIT_SHA" 
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
             echo '>>> (Optional) Sanity run'
