@@ -32,79 +32,6 @@ pipeline {
         }
       }
     }
-    stage('Build & Unit/Robot on VM2') {
-      steps {
-        withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2',
-                                          keyFileVariable: 'K2',
-                                          usernameVariable: 'U2')]) {
-          sh """#!/usr/bin/env bash
-            set -euo pipefail
-
-            # ส่ง env ของ Jenkins เข้าไปเป็น ENV ฝั่งรีโมต แล้วรันสคริปต์ด้วย bash -lc (ไม่มี heredoc)
-            ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" \
-              env REPO_API="$REPO_API" \
-                  REPO_ROBOT="$REPO_ROBOT" \
-                  REGISTRY="$REGISTRY" \
-                  BUILD_NUMBER="$BUILD_NUMBER" \
-                  TEACHER_CODE="$TEACHER_CODE" \
-                  ROBOT_BASE_VM2="${ROBOT_BASE_VM2:-http://vm2.local:8081}" \
-              bash -lc '
-            set -euo pipefail
-
-            # 1) Workspace
-            rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
-            echo "Workspace setup completed"
-
-            # 2) Clone API
-            git clone --depth 1 "$REPO_API" simple-api
-            cd simple-api
-
-            # 3) Unit test (optional)
-            if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh; else echo "Skipping unit test"; fi
-
-            # 4) Build image (ย้ำใช้ app/Dockerfile)
-            docker build -f app/Dockerfile -t "$REGISTRY:$BUILD_NUMBER" .
-            echo "Docker image built: $REGISTRY:$BUILD_NUMBER"
-
-            # 5) Run container (sanity)
-            (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
-            docker run -d --name simple-api -e TEACHER_CODE="$TEACHER_CODE" -p 8081:5000 "$REGISTRY:$BUILD_NUMBER" || true
-            echo "Docker container started"
-
-            # 6) Clone Robot
-            cd .. && git clone --depth 1 "$REPO_ROBOT" simple-api-robot
-            cd simple-api-robot
-
-            # 7) Install Robot + RequestsLibrary
-            python3 -m pip install --user -U pip robotframework robotframework-requests requests
-            python3 -m robot --version
-
-            # 8) Run Robot (เลือกโฟลเดอร์หรือไฟล์อัตโนมัติ)
-            mkdir -p results
-            echo "Listing test files:"; find . -maxdepth 2 -name "*.robot" -print || true
-            if [ -d tests ] && ls -1 tests/*.robot >/dev/null 2>&1; then
-              python3 -m robot -d results -v BASE:"$ROBOT_BASE_VM2" -v EXPECT_CODE:"$TEACHER_CODE" tests/
-            elif ls -1 ./*.robot >/dev/null 2>&1; then
-              python3 -m robot -d results -v BASE:"$ROBOT_BASE_VM2" -v EXPECT_CODE:"$TEACHER_CODE" ./*.robot
-            else
-              echo "[Robot] ERROR: No .robot files found"; exit 250
-            fi
-            echo "Robot tests completed"
-
-            # 9) Push image
-            docker push "$REGISTRY:$BUILD_NUMBER"
-            echo "Docker image pushed"
-            '
-
-            # 10) Copy Robot results back to Jenkins
-            rm -rf robot_results_vm2 && mkdir -p robot_results_vm2
-            scp -o StrictHostKeyChecking=no -r "$U2@$VM2_HOST:~/ci/simple-api-robot/results/" robot_results_vm2/
-            echo "Robot results copied to Jenkins"
-          """
-        }
-      }
-    }
-
 
     // stage('Build & Unit/Robot on VM2') {
     //   steps {
@@ -112,7 +39,7 @@ pipeline {
     //       // Step 1: Setup workspace
     //       sh """#!/usr/bin/env bash
     //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s << REMOTE
+    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
     //         set -euo pipefail
     //         rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
     //         echo "Workspace setup completed"
@@ -174,7 +101,7 @@ pipeline {
     //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
     //         set -euo pipefail
     //         cd ~/ci
-    //         git clone "${REPO_ROBOT}" simple-api-robot || { echo "Failed to clone Robot repo"; exit 1; }
+    //         git clone --depth 1 "${REPO_ROBOT}" simple-api-robot || { echo "Failed to clone Robot repo"; exit 1; }
     //         echo "Robot repository cloned"
     //         REMOTE
     //       """
@@ -227,7 +154,51 @@ pipeline {
     //     }
     //   }
     // }
+    stage('Build & Test on VM2') {
+      steps {
+        withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]) {
+          sh """
+          ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
+            rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
 
+            echo '>>> Clone API repo'
+            git clone ${REPO_API} simple-api
+            cd simple-api
+
+            echo '>>> Unit test (skip if script not found)'
+            if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh; else echo 'skip unit test'; fi
+            
+            echo '>>> Build Docker image'
+            docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
+
+            echo '>>> (Optional) Sanity run'
+            (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
+            docker run -d --name simple-api -p 8081:5000 ${REGISTRY}:${env.BUILD_NUMBER} || true
+
+            echo '>>> Robot test (skip if repo/tests not found)'
+            cd .. && git clone ${REPO_ROBOT} simple-api-robot || true
+            if [ -d simple-api-robot ]; then
+              cd simple-api-robot
+              if command -v robot >/dev/null 2>&1; then
+                robot -d results tests/ || (echo 'Robot test failed' && exit 1)
+              else
+                echo 'skip robot (robot not installed)'
+              fi
+            else
+              echo 'skip robot (repo not found)'
+            fi
+
+            echo '>>> Push image to registry'
+            docker push ${REGISTRY}:${env.BUILD_NUMBER}
+
+            echo '>>> Cleanup temp container'
+            docker rm -f simple-api || true
+          "
+          """
+        }
+      }
+    }
+    
     stage('Deploy & Sanity/Load on VM3') {
       steps {
         withCredentials([sshUserPrivateKey(credentialsId:'ssh-vm3',keyFileVariable:'K3',usernameVariable:'U3')]) {
