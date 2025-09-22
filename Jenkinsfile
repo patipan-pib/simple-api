@@ -96,11 +96,11 @@ pipeline {
             echo '$GHCR_PAT' | docker login ghcr.io -u patipan-pib --password-stdin
 
             echo '>>> Tag & Push image to GHCR'
-            docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:latest
+            # docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:latest
             docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:${env.BUILD_NUMBER}
             docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:\${GIT_SHA}
 
-            docker push ghcr.io/patipan-pib/simple-api:latest
+            # docker push ghcr.io/patipan-pib/simple-api:latest
             docker push ghcr.io/patipan-pib/simple-api:${env.BUILD_NUMBER}
             docker push ghcr.io/patipan-pib/simple-api:\${GIT_SHA}
 
