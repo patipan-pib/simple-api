@@ -236,8 +236,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'robot_results_vm2/**/*', fingerprint: true, onlyIfSuccessful: false
-      archiveArtifacts artifacts: 'robot_results_vm3/**/*', fingerprint: true, onlyIfSuccessful: false
+      echo "Pipeline finished (BUILD #${env.BUILD_NUMBER})"
     }
   }
 }
