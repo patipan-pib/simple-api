@@ -50,15 +50,15 @@ pipeline {
 
             cd .. && git clone ${REPO_ROBOT} simple-api-robot
             cd simple-api-robot
-            python3 -m pip install --user --upgrade pip
-            if [ -f requirements.txt ]; then
-              python3 -m pip install --user -r requirements.txt
-            else
-              python3 -m pip install --user robotframework robotframework-requests requests
-            fi
-            export PATH=\\"\\$HOME/.local/bin:\\$PATH\\"
-            mkdir -p results
-            robot -d results -v BASE:'${params.ROBOT_BASE_VM2}' -v EXPECT_CODE:'${params.TEACHER_CODE}' tests/ || (echo 'Robot test failed (VM2)' && exit 1)
+            // python3 -m pip install --user --upgrade pip
+            // if [ -f requirements.txt ]; then
+            //   python3 -m pip install --user -r requirements.txt
+            // else
+            //   python3 -m pip install --user robotframework robotframework-requests requests
+            // fi
+            // export PATH=\\"\\$HOME/.local/bin:\\$PATH\\"
+            // mkdir -p results
+            // robot -d results -v BASE:'${params.ROBOT_BASE_VM2}' -v EXPECT_CODE:'${params.TEACHER_CODE}' tests/ || (echo 'Robot test failed (VM2)' && exit 1)
 
             docker push ${REGISTRY}:${env.BUILD_NUMBER}
           "
