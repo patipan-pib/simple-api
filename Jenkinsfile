@@ -36,37 +36,39 @@ pipeline {
     stage('Build & Test on VM2') {
       steps {
         withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]) {
-          sh """
-          ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
-            rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
+        sh """
+        ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "set -e
+          # เตรียมโฟลเดอร์งาน
+          mkdir -p ~/ci && cd ~/ci
+          rm -rf simple-api-robot
+          git clone ${REPO_ROBOT} simple-api-robot
+          cd simple-api-robot
 
-            git clone ${REPO_API} simple-api
-            cd simple-api
+          # ติดตั้ง Robot Framework (โหมด --user) และจัด PATH ให้เห็นไบนารี
+          python3 -m pip install --user --upgrade pip
+          if [ -f requirements.txt ]; then
+            python3 -m pip install --user -r requirements.txt
+          else
+            # อย่างน้อยต้องมี 2 ตัวนี้เพื่อใช้ RequestsLibrary
+            python3 -m pip install --user robotframework robotframework-requests requests
+          fi
+          export PATH=\\"\\$HOME/.local/bin:\\$PATH\\"
 
-            if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh || exit 1; else echo 'skip unit test'; fi
+          # ค่าพื้นฐานสำหรับทดสอบ (ปรับได้จาก Jenkins environment ถ้ามี)
+          : \${ROBOT_BASE:=http://vm2.local:8081}
+          : \${ROBOT_EXPECT:=ABC123}
 
-            docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
+          # รัน Robot + เก็บผล
+          mkdir -p results
+          # ถ้าคุณใช้ไฟล์เดียวรวม (เช่น api_tests.robot) ก็ชี้เป็นไฟล์นั้น
+          robot -d results -v BASE:\\$ROBOT_BASE -v EXPECT_CODE:\\$ROBOT_EXPECT tests/ || (echo 'Robot test failed' && exit 1)
+        "
 
-            (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
-            # sanity run พร้อม ENV
-            docker run -d --name simple-api -e TEACHER_CODE='${TEACHER_CODE}' -p 8081:5000 ${REGISTRY}:${env.BUILD_NUMBER} || true
-
-            cd .. && git clone ${REPO_ROBOT} simple-api-robot || true
-            if [ -d simple-api-robot ]; then
-              cd simple-api-robot
-              pip3 install --user -r requirements.txt || pip3 install --user robotframework requests
-              if command -v robot >/dev/null 2>&1; then
-                robot -d results tests/ || (echo 'Robot test failed' && exit 1)
-              else
-                echo 'robot still not installed'
-              fi
-            fi
-
-            docker push ${REGISTRY}:${env.BUILD_NUMBER}
-            docker rm -f simple-api || true
-          "
-          """
-        }
+        # ดึงผลกลับมาโชว์บน Jenkins (optional แต่แนะนำ)
+        rm -rf robot_results && mkdir -p robot_results
+        scp -i "$K2" -o StrictHostKeyChecking=no -r "$U2@${VM2_HOST}:~/ci/simple-api-robot/results/" robot_results/
+        """
+      }
       }
     }
 
