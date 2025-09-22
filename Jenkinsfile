@@ -45,6 +45,9 @@ pipeline {
             cd simple-api
 
             echo '>>> Unit test (skip if script not found)'
+            python3 -m pip install --user -U pip
+            python3 -m pip install --user -r app/requirements.txt
+            export PATH="$HOME/.local/bin:$PATH"
             python3 -m unittest unit_test.py -v
 
             echo '>>> Build Docker image'
