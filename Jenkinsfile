@@ -1,18 +1,37 @@
 pipeline {
   agent any
+
   environment {
-    VM2_HOST   = "vm2.local"
-    VM3_HOST   = "vm3.local"
+    // Hosts
+    VM2_HOST = "vm2.local"   // Test/Build
+    VM3_HOST = "vm3.local"    // Pre-Prod/Deploy
+
+    // Repos (HTTPS เพื่อไม่ต้องมี SSH key บน VM2)
     REPO_API   = "https://github.com/patipan-pib/simple-api.git"
     REPO_ROBOT = "https://github.com/patipan-pib/simple-api-robot.git"
-    REGISTRY   = "vm2.local:5000/simple-api"
 
-    // <<< ตั้งค่าตามที่ผู้สอนกำหนด
+    // Private Registry (running on VM2:5000; ensure VM3 allows insecure registry)
+    REGISTRY   = "vm2.local:5000/simple-api"
     TEACHER_CODE = "ABC123"
   }
 
   stages {
-    // ... (คงเดิมทุก stage ที่คุณมี)
+    stage('Checkout SCM') {
+      steps {
+        echo "SCM uses credential 'github_ssh' from job config"
+      }
+    }
+
+    stage('Check bound keys (VM2 & VM3)') {
+      steps {
+        withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]) {
+          sh 'ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@${VM2_HOST}" "echo CONNECTED_VM2 && hostname && whoami"'
+        }
+        withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm3', keyFileVariable: 'K3', usernameVariable: 'U3')]) {
+          sh 'ssh -i "$K3" -o StrictHostKeyChecking=no "$U3@${VM3_HOST}" "echo CONNECTED_VM3 && hostname && whoami"'
+        }
+      }
+    }
 
     stage('Build & Test on VM2') {
       steps {
