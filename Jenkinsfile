@@ -276,7 +276,7 @@ pipeline {
                                           usernameVariable: 'USER')]) {
           sh '''
             #!/usr/bin/env bash
-            set -Eeuo pipefail
+            set -euo pipefail
             
             ssh -i $KEY" -o StrictHostKeyChecking=no "$USER@$VM2_HOST" '
               set -euo pipefail
