@@ -33,128 +33,6 @@ pipeline {
       }
     }
 
-    // stage('Build & Unit/Robot on VM2') {
-    //   steps {
-    //     withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]) {
-    //       // Step 1: Setup workspace
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
-    //         echo "Workspace setup completed"
-    //         REMOTE
-    //       """
-
-    //       // Step 2: Clone API repository
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         cd ~/ci
-    //         git clone "${REPO_API}" simple-api || { echo "Failed to clone API repo"; exit 1; }
-    //         echo "API repository cloned"
-    //         REMOTE
-    //       """
-
-    //       // Step 3: Run unit tests (optional)
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         cd ~/ci/simple-api
-    //         if [ -x ./run_unit_test.sh ]; then 
-    //           ./run_unit_test.sh || { echo "Unit test failed"; exit 1; }
-    //         else 
-    //           echo "Skipping unit test (run_unit_test.sh not found or not executable)"
-    //         fi
-    //         REMOTE
-    //       """
-
-    //       // Step 4: Build Docker image
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         cd ~/ci/simple-api
-    //         docker build -f app/Dockerfile -t "${REGISTRY}:${BUILD_NUMBER}" . || { echo "Docker build failed"; exit 1; }
-    //         echo "Docker image built: ${REGISTRY}:${BUILD_NUMBER}"
-    //         REMOTE
-    //       """
-
-    //       // Step 5: Run Docker container
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         docker ps -aq --filter name=simple-api | xargs -r docker rm -f || true
-    //         docker run -d --name simple-api \
-    //           -e TEACHER_CODE="${TEACHER_CODE}" \
-    //           -p 8081:5000 "${REGISTRY}:${BUILD_NUMBER}" || { echo "Docker run failed"; exit 1; }
-    //         echo "Docker container started"
-    //         REMOTE
-    //       """
-
-    //       // Step 6: Clone Robot repository
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         cd ~/ci
-    //         git clone --depth 1 "${REPO_ROBOT}" simple-api-robot || { echo "Failed to clone Robot repo"; exit 1; }
-    //         echo "Robot repository cloned"
-    //         REMOTE
-    //       """
-
-    //       // Step 7: Install Robot Framework dependencies
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         cd ~/ci/simple-api-robot
-    //         python3 -m pip install --user -U pip robotframework robotframework-requests requests || { echo "Pip install failed"; exit 1; }
-    //         export PATH="$HOME/.local/bin:$PATH"
-    //         python3 -m robot --version
-    //         echo "Robot Framework dependencies installed"
-    //         REMOTE
-    //       """
-
-    //       // Step 8: Run Robot Framework tests
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         cd ~/ci/simple-api-robot
-    //         mkdir -p results
-    //         python3 -m robot -d results \
-    //           -v BASE:"${ROBOT_BASE_VM2}" \
-    //           -v EXPECT_CODE:"${TEACHER_CODE}" \
-    //           tests/ || { echo "Robot test failed (VM2)"; exit 1; }
-    //         echo "Robot tests completed"
-    //         REMOTE
-    //       """
-
-    //       // Step 9: Push Docker image
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         ssh -i "$K2" -o StrictHostKeyChecking=no "$U2@$VM2_HOST" bash -s <<'REMOTE'
-    //         set -euo pipefail
-    //         docker push "${REGISTRY}:${BUILD_NUMBER}" || { echo "Docker push failed"; exit 1; }
-    //         echo "Docker image pushed"
-    //         REMOTE
-    //       """
-
-    //       // Step 10: Copy Robot results back to Jenkins
-    //       sh """#!/usr/bin/env bash
-    //         set -euo pipefail
-    //         rm -rf robot_results_vm2 && mkdir -p robot_results_vm2
-    //         scp -o StrictHostKeyChecking=no -r "$U2@$VM2_HOST:~/ci/simple-api-robot/results/" robot_results_vm2/
-    //         echo "Robot results copied to Jenkins"
-    //       """
-    //     }
-    //   }
-    // }
-
     stage('Build & Test on VM2') {
       steps {
         withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2', keyFileVariable: 'K2', usernameVariable: 'U2')]) {
@@ -209,6 +87,19 @@ pipeline {
           "
           """
         }
+      }
+    }
+
+    stage('Unit Test (python) on Jenkins') {
+      steps {
+        sh """
+          cd ci/simple-api
+          if [ -x ./run_unit_test.sh ]; then
+            ./run_unit_test.sh
+          else
+            echo 'skip unit test (script not found)'
+          fi
+        """
       }
     }
 
