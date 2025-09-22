@@ -45,9 +45,8 @@ pipeline {
             cd simple-api
 
             echo '>>> Unit test (skip if script not found)'
-            coverage run -m unittest unit_test.py -v
-            coverage report -m
-            
+            python run -m unittest unit_test.py -v
+
             echo '>>> Build Docker image'
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
