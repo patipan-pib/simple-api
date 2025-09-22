@@ -274,7 +274,7 @@ pipeline {
         withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2',
                                           keyFileVariable: 'KEY',
                                           usernameVariable: 'USER')]) {
-          sh '''
+          sh """
             #!/usr/bin/env bash
             
             ssh -i $KEY" -o StrictHostKeyChecking=no "$USER@$VM2_HOST" '
@@ -325,7 +325,7 @@ pipeline {
               echo ">>> Cleanup temp container"
               docker rm -f simple-api || true
             '
-          '''
+          """
         }
       }
     }
