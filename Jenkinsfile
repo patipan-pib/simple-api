@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   parameters {
-    string(name: 'TEACHER_CODE', defaultValue: 'ABC123', description: 'Expected /getcode & container ENV')
+    string(name: 'TEACHER_CODE', defaultValue: 'TEST SUCCESS', description: 'Expected /getcode & container ENV')
     string(name: 'ROBOT_BASE_VM2', defaultValue: 'http://vm2.local:8081', description: 'Robot BASE for VM2 sanity')
     string(name: 'ROBOT_BASE_VM3', defaultValue: 'http://vm3.local',     description: 'Robot BASE for VM3 pre-prod')
   }
@@ -48,8 +48,8 @@ pipeline {
             (docker ps -aq --filter name=simple-api && docker rm -f simple-api) || true
             docker run -d --name simple-api -e TEACHER_CODE='${params.TEACHER_CODE}' -p 8081:5000 ${REGISTRY}:${env.BUILD_NUMBER} || true
 
-            cd .. && git clone ${REPO_ROBOT} simple-api-robot
-            cd simple-api-robot
+            // cd .. && git clone ${REPO_ROBOT} simple-api-robot
+            // cd simple-api-robot
             // python3 -m pip install --user --upgrade pip
             // if [ -f requirements.txt ]; then
             //   python3 -m pip install --user -r requirements.txt
