@@ -1,6 +1,5 @@
 pipeline {
   agent any
-  options { shell('/bin/bash') }
 
   parameters {
     string(name: 'TEACHER_CODE', defaultValue: 'TEST SUCCESS', description: 'Expected /getcode & container ENV')
@@ -211,74 +210,15 @@ pipeline {
     //   }
     // }
 
-    // stage('Build & Test on VM2') {
-    //   steps {
-    //     withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2',
-    //                                       keyFileVariable: 'KEY',
-    //                                       usernameVariable: 'USER')]) {
-    //       sh """
-    //         ssh -i "$KEY" -o StrictHostKeyChecking=no "$USER@$VM2_HOST" '
-    //           set -euo pipefail
-
-    //           rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
-
-    //           echo ">>> Clone API repo"
-    //           git clone "$REPO_API" simple-api
-    //           cd simple-api
-
-    //           echo ">>> Unit test (skip if script not found)"
-    //           if [ -x ./run_unit_test.sh ]; then ./run_unit_test.sh; else echo "skip unit test"; fi
-
-    //           echo ">>> Build Docker image"
-    //           docker build -f app/Dockerfile -t "$REGISTRY:$BUILD_NUMBER" .
-
-    //           echo ">>> (Optional) Sanity run"
-    //           cid=\$(docker ps -aq --filter name=simple-api); [ -n "\$cid" ] && docker rm -f simple-api || true
-    //           docker run -d --name simple-api -e TEACHER_CODE="\${TEACHER_CODE}" -p 8081:5000 "$REGISTRY:$BUILD_NUMBER"
-
-    //           # Health-check
-    //           for i in 1 2 3 4 5; do
-    //             curl -fsS http://localhost:8081/hello/world && break || sleep 2
-    //           done
-
-    //           echo ">>> Robot test"
-    //           cd .. && rm -rf simple-api-robot && git clone --depth 1 "$REPO_ROBOT" simple-api-robot
-    //           cd simple-api-robot
-
-    //           python3 -m pip install --user -U pip robotframework robotframework-requests requests
-    //           export PATH="\\$HOME/.local/bin:\\$PATH"
-
-    //           mkdir -p results
-    //           if [ -d tests ] && ls -1 tests/*.robot >/dev/null 2>&1; then
-    //             python3 -m robot -d results -v BASE:"\${ROBOT_BASE_VM2}" -v EXPECT_CODE:"\${TEACHER_CODE}" tests/ \
-    //               || (echo "Robot test failed" && exit 1)
-    //           elif ls -1 ./*.robot >/dev/null 2>&1; then
-    //             python3 -m robot -d results -v BASE:"\${ROBOT_BASE_VM2}" -v EXPECT_CODE:"\${TEACHER_CODE}" ./*.robot \
-    //               || (echo "Robot test failed" && exit 1)
-    //           else
-    //             echo "ERROR: No .robot files found" && exit 250
-    //           fi
-
-    //           echo ">>> Push image to registry"
-    //           docker push "$REGISTRY:$BUILD_NUMBER"
-
-    //           echo ">>> Cleanup temp container"
-    //           docker rm -f simple-api || true
-    //         '
-    //       """
-    //     }
-    //   }
-    // }
-
     stage('Build & Test on VM2') {
       steps {
         withCredentials([sshUserPrivateKey(credentialsId: 'ssh-vm2',
                                           keyFileVariable: 'KEY',
                                           usernameVariable: 'USER')]) {
           sh '''
-            #!/usr/bin/env bash -lc "
+            #!/usr/bin/env bash -lc '
             
-            ssh -i $KEY" -o StrictHostKeyChecking=no "$USER@$VM2_HOST" '
+            ssh -i $KEY" -o StrictHostKeyChecking=no "$USER@$VM2_HOST" "
               set -e
 
               rm -rf ~/ci && mkdir -p ~/ci && cd ~/ci
@@ -325,8 +265,8 @@ pipeline {
 
               echo ">>> Cleanup temp container"
               docker rm -f simple-api || true
-            '
             "
+            '
           '''
         }
       }
