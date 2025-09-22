@@ -123,7 +123,7 @@ pipeline {
           docker push ${GHCR_IMAGE}:$GIT_SHA
 
           echo '>>> Show GHCR latest tag timestamp (via GitHub API)'
-          curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GHCR_PAT" https://api.github.com/users/patipan-pib/packages/container/simple-api/versions?per_page=1 | jq -r '.[0] | "latest_tags=\(.metadata.container.tags)\\nupdated_at=\(.updated_at)"' || true
+          curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GHCR_PAT" https://api.github.com/users/patipan-pib/packages/container/simple-api/versions?per_page=1 | | jq -r '.[0] | {tags: .metadata.container.tags, updated_at}' || true
           """
         }
       }
