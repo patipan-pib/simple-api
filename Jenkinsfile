@@ -54,14 +54,12 @@ pipeline {
             cd .. && git clone ${REPO_ROBOT} simple-api-robot || true
             if [ -d simple-api-robot ]; then
               cd simple-api-robot
+              pip3 install --user -r requirements.txt || pip3 install --user robotframework requests
               if command -v robot >/dev/null 2>&1; then
-                mkdir -p results
                 robot -d results tests/ || (echo 'Robot test failed' && exit 1)
               else
-                echo 'skip robot (robot not installed)'
+                echo 'robot still not installed'
               fi
-            else
-              echo 'skip robot (repo not found)'
             fi
 
             docker push ${REGISTRY}:${env.BUILD_NUMBER}
