@@ -58,7 +58,7 @@ pipeline {
 
             echo '>>> Build Docker image'
             GIT_SHA=\$(git rev-parse --short HEAD)
-            echo "DEBUG: GIT_SHA=\${GIT_SHA}"
+            echo "DEBUG: GIT_SHA=${GIT_SHA}"
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
 
             echo '>>> (Optional) Sanity run'
@@ -98,11 +98,11 @@ pipeline {
             echo '>>> Tag & Push image to GHCR'
             # docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:latest
             docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:${env.BUILD_NUMBER}
-            docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:\${GIT_SHA}
+            docker tag ${REGISTRY}:${env.BUILD_NUMBER} ghcr.io/patipan-pib/simple-api:${GIT_SHA}
 
             # docker push ghcr.io/patipan-pib/simple-api:latest
             docker push ghcr.io/patipan-pib/simple-api:${env.BUILD_NUMBER}
-            docker push ghcr.io/patipan-pib/simple-api:\${GIT_SHA}
+            docker push ghcr.io/patipan-pib/simple-api:${GIT_SHA}
 
             echo '>>> Cleanup temp container'
             docker rm -f simple-api || true
