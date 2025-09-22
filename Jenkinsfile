@@ -48,7 +48,7 @@ pipeline {
             python3 -m pip install --user -U pip
             python3 -m pip install --user -r app/requirements.txt
             export PATH="$HOME/.local/bin:$PATH"
-            python -m unittest -v unit_test.py
+            python3 -m unittest -v unit_test.py
 
             echo '>>> Build Docker image'
             docker build -f app/Dockerfile -t ${REGISTRY}:${env.BUILD_NUMBER} .
