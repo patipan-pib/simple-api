@@ -233,7 +233,7 @@ pipeline {
 
               echo ">>> (Optional) Sanity run"
               cid=\$(docker ps -aq --filter name=simple-api); [ -n "\$cid" ] && docker rm -f simple-api || true
-              docker run -d --name simple-api -e TEACHER_CODE="\${TEACHER_CODE}" -p 8081:5000 "$REGISTRY:$BUILD_NUMBER"
+              docker run -d --name simple-api -e -p 8081:5000 "$REGISTRY:$BUILD_NUMBER"
 
               # Health-check
               for i in 1 2 3 4 5; do
