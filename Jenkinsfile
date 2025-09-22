@@ -45,11 +45,9 @@ pipeline {
             cd simple-api
 
             echo '>>> Unit test (skip if script not found)'
-            python3 -m venv .venv || true
-            . .venv/bin/activate
-            pip install -U pip
-            pip install -r app/requirements.txt
-            export PYTHONPATH="$PWD:${PYTHONPATH:-}"
+            python3 -m pip install --user -U pip
+            python3 -m pip install --user -r app/requirements.txt
+            export PATH="$HOME/.local/bin:$PATH"
             python -m unittest -v unit_test.py
 
             echo '>>> Build Docker image'
