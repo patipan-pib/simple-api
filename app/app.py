@@ -3,7 +3,7 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-GETCODE = "success"
+GETCODE = "success2"
 
 @app.route('/')
 def index():
